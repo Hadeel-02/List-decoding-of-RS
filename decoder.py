@@ -1,106 +1,80 @@
+# decoder.py
+
 import utilities
 import sympy as sp
-from galois import Poly
-import itertools
 from sage.all import *
-'''
-1. Interpolation
-'''
+import math
+import numpy as np
 
-def build_monomials():
-    # Q = a + x + y + xy + x^2y + xy^2 ...
-    # the monomials: all the possible combinations of powers of x and y that can appear in Q(x,y) up to the degree limits
-    s = utilities.s
-    monomials = [(i, j) for i in range(s + 1) for j in range(s + 1)]
-    return monomials
+# 1. Constructing Q(x, y) — Interpolation
+
+def build_monomials(deg_x, deg_y):
+    # Generate all (i, j) monomials such that 0 ≤ i ≤ deg_x and 0 ≤ j ≤ deg_y. 
+    # These represent terms x^i * y^j in the bivariate polynomial Q(x, y).
+    return [(i, j) for i in range(deg_x+1) for j in range(deg_y + 1)]
 
 def build_interpolation_matrix(pairs, monomials):
-    # pairs refer to the (alpha, y) where;
-    # - alpha is the evaluation point
-    # - y is the code character (it might be corrupted after adding the noise)
-    
-    A = []  # the interpolation matrix
+    #Construct the interpolation matrix, where each row corresponds to evaluating monomials at a given (alpha, y) pair over GF(p).
+    A = []
     for alpha, y in pairs:
         row = []
         for (i, j) in monomials:
-            val = alpha**i * y**j
+            val = (utilities.GF(alpha)**i) * (utilities.GF(y)**j)
             row.append(int(val))
         A.append(row)
+    return A
+
+def coeffs_to_poly(coeffs, deg_x, deg_y):
+    # Convert a flat list of coefficients into a bivariate polynomial over GF(p).
+    polynomial = 0
+    x, y = PolynomialRing(GF(utilities.p), 2, ['x', 'y']).gens()
+    for i in range(deg_x + 1):
+        for j in range(deg_y + 1):
+            coeff = int(coeffs[((deg_y + 1) * i) + j]) % utilities.p
+            polynomial += coeff * x ** i * y ** j
+    return polynomial
+
+def build_Qs(matrix, n, deg_x, deg_y):
+    # Solve for the right nullspace of the interpolation matrix to find Q(x, y)
+    # Polynomials that satisfy Q(alpha_i, y_i) = 0 for all i.
+    M = MatrixSpace(GF(utilities.p), n, (deg_x + 1) * (deg_y + 1))
+    A = M(matrix)
+    Qs_coeffs = A.right_kernel_matrix(basis="computed")
+    return [coeffs_to_poly(coefficients, deg_x, deg_y) for coefficients in Qs_coeffs]
+
+def construct_Q(codeword, n, k, eval_pts):
+    # Constructing candidate Q(x, y) polynomials.
+    deg_x = math.floor(math.sqrt(n * (k - 1)))
+    deg_y = 1 if deg_x == 0 else math.floor(n / math.sqrt(n * (k - 1)))
+    pairs = zip(eval_pts, codeword)
+    monomials = build_monomials(deg_x, deg_y)
+    A = np.array(build_interpolation_matrix(pairs, monomials))
+    return build_Qs(A, n, deg_x, deg_y)
+
+# 2. Factoring
+
+def factors(qs):
+    # Factor all Q(x, y) polynomials and return linear factors of the form y - f(x). (Where f(x) is a candidate message polynomial)
+    all_factors = []
+    y = PolynomialRing(GF(utilities.p), 1, 'y').gen()
+    for q in qs:
+        for factor in q.factor():
+            all_factors.append(y - factor[0])
+    return all_factors
+
+# 3. Retrieve message strings from candidate polynomials
+def msg_retrieve(poly):
+    # Convert a polynomial f(x) = a_0 + a_1*x + ... into a string message by interpreting coefficients as ASCII values. 
+    msg = "".join(chr(c) for c in poly.coefficients())
+    return msg
+
+# Full decoder
     
-    return sp.Matrix(A)
+def decoder(codeword, n, k, e, eval_pts):
+    # Decode a potentially corrupted codeword using Sudan's algorithm.
+    # Returns a list of all candidate decoded messages.
 
-def solve_zero_space(matrix):
-    zero_vectors = matrix.nullspace()
-    if not zero_vectors:
-        raise Exception("No non-zero solution found for the interpolation matrix.")
-    
-    for vec in zero_vectors:
-        if any(c != 0 for c in vec):
-            return [utilities.GF(int(c % utilities.p)) for c in vec]
-    
-    return []  # Return empty if no valid solution is found.
-
-def construct_Q(codeword):
-    '''
-    Construct Q(x,y) with deg_x, deg_y <= root(n) that for all point (x,y) = (alpha, y) Q(x,y) = 0.
-    Returns a dictionary {(i,j): coefficient}.
-    '''
-    pairs = zip(codeword, utilities.EVALUATION_POINTS)
-    monomials = build_monomials()
-    A = build_interpolation_matrix(pairs, monomials)
-    Q_coeffs = solve_zero_space(A)
-    
-    # Now we return Q_coeffs as a dictionary
-    Q_dict = {}
-    for idx, coeff in enumerate(Q_coeffs):
-        Q_dict[monomials[idx]] = coeff
-
-    return Q_dict
-
-'''
-2. Factorization
-'''
-
-def evaluate_Q_at_poly(Q_dict, f_poly):
-    """
-    Plug y = f(x) into Q(x,y), and return the result as a univariate polynomial.
-    Q_dict: {(i,j): GF element}
-    f_poly: f(x) as a galois.Poly
-    """
-    GF = f_poly.field
-    x_poly = Poly.Identity(GF)
-    result = Poly.Zero(GF)
-
-    for (i, j), coeff in Q_dict.items():
-        # Calculate each term separately and add them to result
-        term = coeff * (x_poly ** i) * (f_poly ** j)
-        result += term
-
-    return result
-
-def find_candidate_messages(Q_dict):
-    """
-    Try all f(x) of degree < k and return those where Q(x, f(x)) = 0
-    """
-    GF = utilities.GF
-    k = utilities.k
-    candidates = []
-
-    elements = list(GF.elements)
-
-    for coeffs in itertools.product(elements, repeat=k):
-        f = Poly(coeffs, field=GF)
-        result = evaluate_Q_at_poly(Q_dict, f)
-        if result == Poly.Zero(GF):
-            candidates.append(f)
-
-    return candidates
-
-def decoder(codeword):
-    '''
-    This function decodes the noisy codeword back to the possible original message(s).
-    '''
-    Q = construct_Q(codeword)  # Construct Q(x, y) from the noisy codeword.
-    possible_messages = find_candidate_messages(Q)  # Pass Q to find_candidate_messages
-
-    return possible_messages
+    all_poss_Qs = construct_Q(codeword, n, k, eval_pts)
+    all_factors = set(factors(all_poss_Qs))
+    list_decoding = [msg_retrieve(factor) for factor in all_factors]
+    return list_decoding
