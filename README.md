@@ -30,7 +30,7 @@ This project works over GF(257) to match ASCII values, and is based on the book:
 - SageMath (must be available in your Python environment)
 - `galois` library
 
-###▶️ Run the Code
+### ▶️ Run the Code
 ```bash
 python3 tests.py
 ```
