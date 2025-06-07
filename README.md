@@ -11,13 +11,14 @@ Reed–Solomon codes are powerful error-correcting codes used in CDs, QR codes, 
 While traditional decoding can correct only up to a certain number of errors, Sudan’s algorithm goes further. It uses list decoding to return all possible messages that could match a corrupted codeword—even when more than half the symbols are wrong.
 
 This project works over GF(257) to match ASCII values, and is based on the book:
-📖 * Essential Coding Theory by Madhu Sudan and Atri Rudra - chapters 5, 11 and 12
+📖 * Essential Coding Theory by Madhu Sudan and Atri Rudra (chapters 5, 11 and 12).
 
 🔗[Reference]: (https://cse.buffalo.edu/faculty/atri/courses/coding-theory/book/web-coding-book.pdf)
 
 
 ## 🗂️ Project Structure
 .
+
 ├── encoder.py # Converts messages to polynomials and encodes them
 
 ├── decoder.py # Implements Sudan's decoder: interpolation + factorization
