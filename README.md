@@ -19,15 +19,15 @@ This project works over GF(257) to match ASCII values, and is based on the book:
 ## 🗂️ Project Structure
 .
 
-├── encoder.py # Converts messages to polynomials and encodes them
+├── encoder.py            # Converts messages to polynomials and encodes them
 
-├── decoder.py # Implements Sudan's decoder: interpolation + factorization
+├── decoder.py            # Implements Sudan's decoder: interpolation + factorization
 
-├── encoder_decoder.py # Full run: encode, add noise, decode, and print results
+├── encoder_decoder.py    # Full run: encode, add noise, decode, and print results
 
-├── utilities.py # Defines the finite field GF(p)
+├── utilities.py          # Defines the finite field GF(p)
 
-├── README.md # Project documentation
+├── README.md             # Project documentation
 
 ---
 
