@@ -1,5 +1,6 @@
 # 📘 Sudan List Decoding of Reed–Solomon Codes
-This project implements **Sudan’s list decoding algorithm** for Reed–Solomon codes over a finite field **GF(p)**, using **Python** and **SageMath**. It demonstrates how to recover original messages from noisy codewords—even beyond the classical decoding limit.
+This project implements **Sudan’s list decoding algorithm** for Reed–Solomon codes over a finite field **GF(p)**, using **Python** and **SageMath**.
+It demonstrates how to recover original messages from noisy codewords—even beyond the classical decoding limit.
 
 ---
 
@@ -15,11 +16,11 @@ This project works over GF(257) to match ASCII values, and is based on the book:
 
 ## 🗂️ Project Structure
 .
-├── encoder.py            # Converts messages to polynomials and encodes them
-├── decoder.py            # Implements Sudan's decoder: interpolation + factorization
-├── encoder_decoder.py    # Full run: encode, add noise, decode, and print results
-├── utilities.py          # Defines the finite field GF(p)
-├── README.md             # Project documentation
+├── encoder.py # Converts messages to polynomials and encodes them
+├── decoder.py # Implements Sudan's decoder: interpolation + factorization
+├── encoder_decoder.py # Full run: encode, add noise, decode, and print results
+├── utilities.py # Defines the finite field GF(p)
+├── README.md # Project documentation
 
 ---
 
@@ -28,8 +29,11 @@ This project works over GF(257) to match ASCII values, and is based on the book:
 - Python 3.x
 - SageMath (must be available in your Python environment)
 - `galois` library
+
 ###▶️ Run the Code
-        python3 tests.py
-Notes:
-    - You can customize the message, codeword length, and number of errors.
-    - Enable/disable tests by commenting them in tests.py.
+```bash
+python3 tests.py
+```
+### Notes:
+- You can customize the message, codeword length, and number of errors.
+- Enable/disable tests by commenting them in tests.py.
