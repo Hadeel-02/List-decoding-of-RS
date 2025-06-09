@@ -30,9 +30,14 @@ def run(message, n, k, e, eval_pts):
 
     possible_meessages = decoder.decoder(corrupted_codeword, n, k, e, eval_pts)
     print("List of possible decoded message")
-    for i, possible_message in enumerate(possible_meessages):
-        print(f"{i+1}) {possible_message}")
+    
+    i = 1
+    for possible_message in possible_meessages:
+        print(f"{i}) {possible_message}")
+        i += 1
+    
     if message in possible_meessages: 
         print("SUCCESS: the decoded lis contain the original message")
     else:
         print("FAILED: The decoded list does not contain the original message")
+    print()
