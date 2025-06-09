@@ -1,4 +1,3 @@
-# decoder.py
 
 import utilities
 import sympy as sp
@@ -65,8 +64,10 @@ def factors(qs):
 # 3. Retrieve message strings from candidate polynomials
 def msg_retrieve(poly):
     # Convert a polynomial f(x) = a_0 + a_1*x + ... into a string message by interpreting coefficients as ASCII values. 
-    msg = "".join(chr(c) for c in poly.coefficients())
-    return msg
+    msg = ""
+    for ch in poly.coefficients():
+        msg += chr(ch)
+    return msg[::-1]
 
 # Full decoder
     
